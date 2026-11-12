@@ -3,7 +3,7 @@
 
 package models
 
-// Why a source could not be searched. Set only when the outcome is `failed`, and only for a caller who may list the peers.* `unauthorized` - the peer answered 401 or 403.* `unreachable` - the peer could not be reached, or its address is not allowed.* `timeout` - the peer did not answer within the per-peer timeout.* `peer_error` - the peer answered with a server error, or with a redirect.* `invalid_response` - the peer's answer was malformed, too large or inconsistent.* `circuit_open` - the peer is failing repeatedly and was not called.* `capacity_exceeded` - this registry had no capacity left to call the peer: too many peer calls were in progress across all searches, the caller had too many searches in progress, or more peers are enabled than one search queries.
+// Why a source could not be searched. Set only when the outcome is `failed`, and only for a caller who may list the peers.* `unauthorized` - the peer answered 401 or 403.* `unreachable` - the peer could not be reached, or its address is not allowed.* `timeout` - the peer did not answer within the per-peer timeout.* `peer_error` - the peer answered with a server error, or with a redirect.* `invalid_response` - the peer's answer was malformed, too large or inconsistent.* `circuit_open` - the peer is failing repeatedly and was not called.* `capacity_exceeded` - this registry had no capacity left to call the peer: too many peer calls were in progress across all searches, the caller had too many searches in progress, or more peers are enabled than one search queries.* `credential_unavailable` - the peer has a credential reference and peer credentials are enabled, but the credential could not be read or used, so the peer was not called. A peer is never searched anonymously instead.
 type FederatedSearchFailureReason int
 
 const (
@@ -14,10 +14,11 @@ const (
 	INVALID_RESPONSE_FEDERATEDSEARCHFAILUREREASON
 	CIRCUIT_OPEN_FEDERATEDSEARCHFAILUREREASON
 	CAPACITY_EXCEEDED_FEDERATEDSEARCHFAILUREREASON
+	CREDENTIAL_UNAVAILABLE_FEDERATEDSEARCHFAILUREREASON
 )
 
 func (i FederatedSearchFailureReason) String() string {
-	return []string{"unauthorized", "unreachable", "timeout", "peer_error", "invalid_response", "circuit_open", "capacity_exceeded"}[i]
+	return []string{"unauthorized", "unreachable", "timeout", "peer_error", "invalid_response", "circuit_open", "capacity_exceeded", "credential_unavailable"}[i]
 }
 
 func ParseFederatedSearchFailureReason(v string) (any, error) {
@@ -37,6 +38,8 @@ func ParseFederatedSearchFailureReason(v string) (any, error) {
 		result = CIRCUIT_OPEN_FEDERATEDSEARCHFAILUREREASON
 	case "capacity_exceeded":
 		result = CAPACITY_EXCEEDED_FEDERATEDSEARCHFAILUREREASON
+	case "credential_unavailable":
+		result = CREDENTIAL_UNAVAILABLE_FEDERATEDSEARCHFAILUREREASON
 	default:
 		return nil, nil
 	}
