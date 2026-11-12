@@ -96,6 +96,18 @@ abstract class PeerSearchException extends RuntimeException {
         }
     }
 
+    /**
+     * The peer has a credential reference and peer credentials are enabled, but the credential
+     * cannot be used. The message never contains the credential.
+     */
+    static final class CredentialUnavailable extends PeerSearchException {
+        private static final long serialVersionUID = 1L;
+
+        CredentialUnavailable(String message) {
+            super(FederatedSearchOutcome.failed, FederatedSearchFailureReason.credential_unavailable, message, null);
+        }
+    }
+
     /** The peer does not offer the public-only agent search, or does not confirm it. */
     static final class Unsupported extends PeerSearchException {
         private static final long serialVersionUID = 1L;

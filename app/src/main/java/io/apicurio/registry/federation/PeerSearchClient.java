@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -50,8 +51,11 @@ import java.util.function.Function;
 /**
  * Calls the agent search of a peer registry, asking for public agents only.
  * <p>
- * The call is anonymous: nothing identifies the caller or this registry to the peer, and a
- * credential reference on the peer is not used. Redirects are not followed. The peer must confirm
+ * Nothing identifies the caller to the peer: the caller's credentials are never sent. The call is
+ * anonymous, unless peer credentials are enabled and the peer has a credential reference; then it
+ * carries the peer's own credential as a bearer token (see {@link PeerCredentials}), read before
+ * the name lookup, and a credential that cannot be used fails the call. Redirects are not
+ * followed, so the credential only ever goes to the peer's own address. The peer must confirm
  * that it applied the public-only mode in its answer; an answer that does not is discarded, since a
  * registry that predates the mode ignores the request for it and may return agents that are not
  * public.
@@ -210,6 +214,7 @@ public class PeerSearchClient {
                 return;
             }
             URI uri = checkedUri(peer);
+            Optional<String> bearerToken = PeerCredentials.bearerToken(config.getPeerCredentialsDir(), peer);
             boolean ssl = "https".equals(uri.getScheme().toLowerCase(Locale.ROOT));
             int port = uri.getPort() != -1 ? uri.getPort() : (ssl ? 443 : 80);
             String host = uri.getHost();
@@ -224,16 +229,20 @@ public class PeerSearchClient {
             }
 
             String requestUri = requestUri(uri, query);
-            Function<InetAddress, RequestOptions> options = address -> new RequestOptions()
-                    .setMethod(HttpMethod.GET)
-                    .setHost(unbracketed(host))
-                    .setPort(port)
-                    .setServer(SocketAddress.inetSocketAddress(port, address.getHostAddress()))
-                    .setSsl(ssl)
-                    .setFollowRedirects(false)
-                    .setURI(requestUri)
-                    .putHeader("Accept", "application/json")
-                    .putHeader(FederatedSearchService.HOP_HEADER, "1");
+            Function<InetAddress, RequestOptions> options = address -> {
+                RequestOptions request = new RequestOptions()
+                        .setMethod(HttpMethod.GET)
+                        .setHost(unbracketed(host))
+                        .setPort(port)
+                        .setServer(SocketAddress.inetSocketAddress(port, address.getHostAddress()))
+                        .setSsl(ssl)
+                        .setFollowRedirects(false)
+                        .setURI(requestUri)
+                        .putHeader("Accept", "application/json")
+                        .putHeader(FederatedSearchService.HOP_HEADER, "1");
+                bearerToken.ifPresent(token -> request.putHeader("Authorization", "Bearer " + token));
+                return request;
+            };
 
             // The name lookup is over. From here the call's future alone holds the slot, until the
             // answer has been read or the request has been reset.

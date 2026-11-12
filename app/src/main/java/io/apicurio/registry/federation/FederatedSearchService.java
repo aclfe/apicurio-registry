@@ -54,7 +54,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * and still be answered. If it fails, or is stopped, the whole request fails and the calls in
  * flight are cancelled.
  * <p>
- * Peers are asked for public agents only and the caller's credentials are never sent to them.
+ * Peers are asked for public agents only and the caller's credentials are never sent to them. A
+ * peer with its own credential configured is searched with that credential, still for public
+ * agents only, and is reported as {@code credential_unavailable} when the credential cannot be
+ * used.
  * Each peer has its own circuit breaker, so a peer that keeps failing is skipped without any
  * effect on the others. Only transport failures, server errors and timeouts count against a
  * peer; a refusal made here, a 401 or 403, an unsupported peer, a malformed answer, a call that

@@ -14,18 +14,24 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -324,6 +330,49 @@ public class FederatedSearchResourceTest extends AbstractResourceTestBase {
             assertEquals(2, peer.requests().size());
         } finally {
             config.searchMaxPeers = savedMaxPeers;
+        }
+    }
+
+    @Test
+    void aPeerWithACredentialIsSearchedWithItAndAMissingOneFailsOnlyThatPeer() throws Exception {
+        Path credentials = Files.createTempDirectory("peer-credentials");
+        Files.writeString(credentials.resolve("with-key"), "peer-token\n");
+        String skill = "credentials-" + UUID.randomUUID();
+        card("local-card", skill, "public");
+        StubPeer withKey = stub((request, response) -> StubPeer.publicAgents(response, 1, "remote"));
+        StubPeer withoutKey = stub((request, response) -> StubPeer.publicAgents(response, 1, "remote"));
+        StubPeer anonymous = stub((request, response) -> StubPeer.publicAgents(response, 1, "remote"));
+        given().contentType(ContentType.JSON)
+                .body(Map.of("peerId", "a-with-key", "url", withKey.url(), "credentialSecretRef", "with-key"))
+                .post(PEERS_PATH).then().statusCode(204);
+        given().contentType(ContentType.JSON)
+                .body(Map.of("peerId", "b-without-key", "url", withoutKey.url(), "credentialSecretRef", "no-such-key"))
+                .post(PEERS_PATH).then().statusCode(204);
+        registerPeer("c-anonymous", anonymous.url());
+
+        Optional<String> saved = config.peerCredentialsDir;
+        config.peerCredentialsDir = Optional.of(credentials.toString());
+        try {
+            String body = given().header("Authorization", "Bearer the-callers-token").queryParam("skill", skill)
+                    .get(SEARCH_PATH).then().statusCode(200)
+                    .body("agents.source", contains("local", "a-with-key", "c-anonymous"))
+                    .body("sources.source", contains("local", "a-with-key", "b-without-key", "c-anonymous"))
+                    .body("sources.outcome", contains("ok", "ok", "failed", "ok"))
+                    .body("sources[2].reason", equalTo("credential_unavailable"))
+                    .extract().asString();
+            assertFalse(body.contains("peer-token"), body);
+
+            assertEquals("Bearer peer-token", withKey.requests().get(0).header("Authorization"));
+            assertTrue(withKey.requests().get(0).query().contains("publicOnly=true"));
+            assertTrue(withoutKey.requests().isEmpty(), "A peer whose credential is missing must not be called.");
+            assertNull(anonymous.requests().get(0).header("Authorization"));
+
+            // The peer API returns the reference, never the credential.
+            given().pathParam("peerId", "a-with-key").get(PEERS_PATH + "/{peerId}").then().statusCode(200)
+                    .body("credentialSecretRef", equalTo("with-key"))
+                    .body(not(containsString("peer-token")));
+        } finally {
+            config.peerCredentialsDir = saved;
         }
     }
 }

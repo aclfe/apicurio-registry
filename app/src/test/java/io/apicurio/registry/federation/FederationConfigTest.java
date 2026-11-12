@@ -1,6 +1,12 @@
 package io.apicurio.registry.federation;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,6 +107,30 @@ class FederationConfigTest {
         config.breakerFailureRatio = 1;
         config.breakerDelayMs = 0;
         assertDoesNotThrow(config::validate);
+    }
+
+    @Test
+    void theCredentialsDirectoryMustExist(@TempDir Path root) throws IOException {
+        FederationConfig config = defaults();
+        config.peerCredentialsDir = Optional.of(root.resolve("missing").toString());
+        assertEquals("Invalid federation configuration: apicurio.federation.peer.credentials.dir ("
+                + root.resolve("missing") + ") must be an existing directory.", problem(config));
+
+        config.peerCredentialsDir = Optional.of(Files.writeString(root.resolve("file"), "x").toString());
+        assertEquals("Invalid federation configuration: apicurio.federation.peer.credentials.dir ("
+                + root.resolve("file") + ") must be an existing directory.", problem(config));
+
+        config.peerCredentialsDir = Optional.of(Files.createDirectory(root.resolve("credentials")).toString());
+        assertDoesNotThrow(config::validate);
+        assertEquals(Optional.of(root.resolve("credentials")), config.getPeerCredentialsDir());
+    }
+
+    @Test
+    void withoutACredentialsDirectoryPeersAreSearchedAnonymously() {
+        FederationConfig config = defaults();
+        assertEquals(Optional.empty(), config.getPeerCredentialsDir());
+        config.peerCredentialsDir = Optional.of(" ");
+        assertEquals(Optional.empty(), config.getPeerCredentialsDir());
     }
 
     @Test
