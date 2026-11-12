@@ -1,0 +1,76 @@
+
+### Image under demo
+$ docker image inspect --format '{{.Id}}' apicurio/apicurio-registry:fed-demo-d4e30db17
+sha256:57c776360ebb22003e04eb1043cb382642e6c87272e5189a8542425cb9e431d8
+
+$ docker image inspect --format '{{.Id}}' quay.io/apicurio/apicurio-registry:latest-release
+sha256:c9cae4c90ce46538abf673c68eb591345f23bcc6c2aa6bfd47189adcf609d8f1
+
+$ curl -s 'http://localhost:8084/apis/registry/v3/system/info' | jq -c '{name, version}'
+{"name":"Apicurio Registry (SQL)","version":"3.3.3"}
+
+
+### Agent cards: one public card here, and three cards on the remote registry, only one of them public
+$ curl -s 'http://localhost:8081/.well-known/agents?skill=translate' | jq -c '[.agents[].artifactId]'
+["remote-unlabelled-translator","remote-private-translator","remote-translator"]
+
+
+### Peers: six registrations of five registries
+$ curl -s 'http://localhost:8080/apis/registry/v3/admin/peers' | jq -c '.peers[] | {peerId, url, enabled, credentialSecretRef}'
+{"peerId":"down","url":"http://down:8080","enabled":true,"credentialSecretRef":null}
+{"peerId":"legacy","url":"http://legacy:8080","enabled":true,"credentialSecretRef":null}
+{"peerId":"remote","url":"http://remote:8080","enabled":true,"credentialSecretRef":null}
+{"peerId":"remote-credentialed","url":"http://remote:8080","enabled":true,"credentialSecretRef":"remote-token"}
+{"peerId":"remote-missing-key","url":"http://remote:8080","enabled":true,"credentialSecretRef":"no-such-token"}
+{"peerId":"slow","url":"http://slow:8080","enabled":true,"credentialSecretRef":null}
+
+
+### The peer API stores and returns the reference, never the credential
+$ curl -s 'http://localhost:8080/apis/registry/v3/admin/peers/remote-credentialed' | jq -c . ; curl -s 'http://localhost:8080/apis/registry/v3/admin/peers' | grep -c demo-token || true
+{"peerId":"remote-credentialed","url":"http://remote:8080","name":"Remote registry, with a credential","enabled":true,"credentialSecretRef":"remote-token"}
+0
+
+
+### One registry is paused and one is stopped
+paused fed-demo-slow, stopped fed-demo-down
+
+### Federated search: every source has its own outcome, and the answer comes within the 5 s deadline
+$ curl -s -o /tmp/fed-demo-search.json -w 'HTTP %{http_code} in %{time_total} s\n' 'http://localhost:8080/apis/registry/v3/search/federated?skill=translate'
+HTTP 200 in 3.094840 s
+
+$ jq -c '.sources[]' /tmp/fed-demo-search.json
+{"source":"local","outcome":"ok","count":1,"truncated":false}
+{"source":"down","outcome":"failed","reason":"unreachable","count":0,"truncated":false}
+{"source":"legacy","outcome":"unsupported","count":0,"truncated":false}
+{"source":"remote","outcome":"ok","count":1,"truncated":false}
+{"source":"remote-credentialed","outcome":"ok","count":1,"truncated":false}
+{"source":"remote-missing-key","outcome":"failed","reason":"credential_unavailable","count":0,"truncated":false}
+{"source":"slow","outcome":"failed","reason":"timeout","count":0,"truncated":false}
+
+$ jq -c '.agents[] | {source, artifactId, owner}' /tmp/fed-demo-search.json
+{"source":"local","artifactId":"local-translator","owner":""}
+{"source":"remote","artifactId":"remote-translator","owner":null}
+{"source":"remote-credentialed","artifactId":"remote-translator","owner":null}
+
+
+### A search that another registry forwarded is refused, so a search goes at most one hop
+$ curl -s -H 'X-Federation-Hop: 1' 'http://localhost:8080/apis/registry/v3/search/federated' | jq -c '{status, title}'
+{"status":400,"title":"A federated search cannot be forwarded: the request carries the X-Federation-Hop header."}
+
+
+### perSourceLimit below 1 is refused
+$ curl -s 'http://localhost:8080/apis/registry/v3/search/federated?perSourceLimit=0' | jq -c '{status, title}'
+{"status":400,"title":"perSourceLimit must be at least 1."}
+
+
+### Per-peer metrics, with the outcome and reason of every call
+$ curl -s http://localhost:19000/metrics | grep -E '^apicurio_federation_peer_search_seconds_count' | sort
+apicurio_federation_peer_search_seconds_count{outcome="failed",peer="down",reason="unreachable"} 1.0
+apicurio_federation_peer_search_seconds_count{outcome="failed",peer="remote-missing-key",reason="credential_unavailable"} 1.0
+apicurio_federation_peer_search_seconds_count{outcome="failed",peer="slow",reason="timeout"} 1.0
+apicurio_federation_peer_search_seconds_count{outcome="ok",peer="remote-credentialed",reason="none"} 1.0
+apicurio_federation_peer_search_seconds_count{outcome="ok",peer="remote",reason="none"} 1.0
+apicurio_federation_peer_search_seconds_count{outcome="unsupported",peer="legacy",reason="none"} 1.0
+
+
+Done. The containers are still running for the UI; './demo.sh clean' removes them.

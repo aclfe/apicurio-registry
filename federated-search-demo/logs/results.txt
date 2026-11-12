@@ -1,0 +1,52 @@
+Commit d4e30db175d4844abae12ad1862e8a5fc0321f4d, run on 2026-11-12
+
+== Targeted unit and REST tests
+./mvnw test -Dlocal -pl app -am -DskipCommitIdPlugin=true -Dsurefire.failIfNoSpecifiedTests=false -Dtest='FederatedSearchResourceTest,FederatedSearchServiceTest,FederatedSearchAuthTest,PeerSearchClientTest,PeerCredentialsTest,FederationConfigTest,PeersFeatureGateTest,PeersResourceTest,KafkaSqlPeersResourceTest,PeersAuthTest,PeerAddressPolicyTest,PeerValidatorTest,PublicOnlyAgentSearchTest,AgentSearchCheckpointTest,AgentVisibilityFilterTest,WellKnownResourceTest,WellKnownResourcePostgresqlTest,A2AAnonymousReadVisibilityTest,A2AAuthTest,A2AAuthenticatedReadVisibilityTest,A2AFormAuthVisibilityTest,A2AProxyHeaderVisibilityTest,A2AProxyTrustVisibilityTest,ExperimentalFeatureGateTest,GitOpsSmokeTest,KubernetesOpsSmokeTest,SearchPermissionsTest,A2AAuthRbacAdminTest'
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.574 s -- in io.apicurio.registry.agents.noprofile.rest.a2a.ExperimentalFeatureGateTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.887 s -- in io.apicurio.registry.federation.PeersFeatureGateTest
+Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.387 s -- in io.apicurio.registry.agents.noprofile.rest.a2a.WellKnownResourcePostgresqlTest
+Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.985 s -- in io.apicurio.registry.agents.noprofile.rest.a2a.WellKnownResourceTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.655 s -- in io.apicurio.registry.agents.rest.wellknown.AgentSearchCheckpointTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.072 s -- in io.apicurio.registry.agents.rest.wellknown.PublicOnlyAgentSearchTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.138 s -- in io.apicurio.registry.auth.A2AAnonymousReadVisibilityTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.782 s -- in io.apicurio.registry.auth.A2AAuthRbacAdminTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.814 s -- in io.apicurio.registry.auth.A2AAuthTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.866 s -- in io.apicurio.registry.auth.A2AAuthenticatedReadVisibilityTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.667 s -- in io.apicurio.registry.auth.A2AFormAuthVisibilityTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.856 s -- in io.apicurio.registry.auth.A2AProxyHeaderVisibilityTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.539 s -- in io.apicurio.registry.auth.A2AProxyTrustVisibilityTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.065 s -- in io.apicurio.registry.auth.grants.SearchPermissionsTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.806 s -- in io.apicurio.registry.federation.FederatedSearchAuthTest
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.729 s -- in io.apicurio.registry.federation.FederatedSearchResourceTest
+Tests run: 26, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.133 s -- in io.apicurio.registry.federation.FederatedSearchServiceTest
+Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.568 s -- in io.apicurio.registry.federation.PeersResourceTest
+Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 42.63 s -- in io.apicurio.registry.federation.KafkaSqlPeersResourceTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 29.36 s -- in io.apicurio.registry.federation.PeersAuthTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 94.42 s -- in io.apicurio.registry.storage.impl.gitops.GitOpsSmokeTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.80 s -- in io.apicurio.registry.storage.impl.kubernetesops.KubernetesOpsSmokeTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.938 s -- in io.apicurio.registry.agents.rest.wellknown.AgentVisibilityFilterTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in io.apicurio.registry.federation.FederationConfigTest
+Tests run: 67, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.089 s -- in io.apicurio.registry.federation.PeerAddressPolicyTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in io.apicurio.registry.federation.PeerCredentialsTest
+Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.180 s -- in io.apicurio.registry.federation.PeerSearchClientTest
+Tests run: 33, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in io.apicurio.registry.storage.PeerValidatorTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.007 s -- in io.apicurio.registry.agents.noprofile.mcpregistry.rest.v0.McpRegistryExperimentalStartupTest
+Total: Tests run: 367, Failures: 0, Errors: 0, Skipped: 0
+
+== Module boundary
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.143 s -- in io.apicurio.registry.architecture.AgentsBoundaryTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.266 s -- in io.apicurio.registry.agents.noprofile.mcpregistry.rest.v0.McpRegistryExperimentalStartupTest
+
+== Federation integration tests
+io.apicurio.tests.federation.FederatedSearchAuthMultiInstanceIT tests 4 failures 0 errors 0 skipped 0 time 34.91
+   aReplacedCredentialIsUsedFromTheNextSearch 0.564
+   aCredentialedPeerStillReturnsOnlyItsPublicAgents 0.236
+   aReaderSeesTheSamePublicRemoteAgentsWithThePeersNumberedAndNoReasons 0.267
+   aCallerWithoutCredentialsCannotSearch 0.036
+io.apicurio.tests.federation.FederatedSearchMultiInstanceIT tests 3 failures 0 errors 0 skipped 0 time 11.822
+   returnsLocalAndPublicRemoteAgentsEachWithItsSource 0.408
+   anUnresponsivePeerTimesOutAndLocalResultsArriveWithinTheDeadline 2.258
+   aStoppedPeerIsReportedAsFailedAndLocalResultsArriveWithinTheDeadline 2.356
+
+== Checkstyle
+You have 0 Checkstyle violations.
