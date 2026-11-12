@@ -7,8 +7,11 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static io.apicurio.common.apps.config.ConfigPropertyCategory.CATEGORY_FEDERATION;
 
@@ -34,6 +37,10 @@ public class FederationConfig {
     @ConfigProperty(name = "apicurio.federation.peer.loopback.enabled", defaultValue = "false")
     @Info(category = CATEGORY_FEDERATION, description = "Allow peer registry URLs that point at a loopback address or a localhost name, for development and tests. Server-wide: applies to every peer, whether created through the admin API or loaded declaratively", availableSince = "3.4.0")
     boolean loopbackEnabled;
+
+    @ConfigProperty(name = "apicurio.federation.peer.credentials.dir")
+    @Info(category = CATEGORY_FEDERATION, description = "Directory of peer credentials. When set, a peer with a credentialSecretRef is searched with the content of the file of that name in this directory, sent as a bearer token, and the search stays public-only. If that file cannot be read, the peer is reported as credential_unavailable and is not searched anonymously instead. When not set, every peer is searched anonymously and credential references are not used. On Kubernetes, mount one Secret here as a whole volume, without subPath, so that added and rotated keys are picked up without a restart", availableSince = "3.4.0")
+    Optional<String> peerCredentialsDir = Optional.empty();
 
     @ConfigProperty(name = "apicurio.federation.search.deadline-ms", defaultValue = "5000")
     @Info(category = CATEGORY_FEDERATION, description = "Time in milliseconds a federated search may take in total. Peers that have not answered by then are reported as deadline_exceeded", availableSince = "3.4.0")
@@ -100,6 +107,11 @@ public class FederationConfig {
             problems.add("apicurio.federation.search.breaker.failure-ratio (" + breakerFailureRatio
                     + ") must be above 0 and at most 1");
         }
+        peerCredentialsDir.ifPresent(dir -> {
+            if (!Files.isDirectory(Path.of(dir))) {
+                problems.add("apicurio.federation.peer.credentials.dir (" + dir + ") must be an existing directory");
+            }
+        });
         if (breakerDelayMs < 0) {
             problems.add("apicurio.federation.search.breaker.delay-ms (" + breakerDelayMs + ") must not be negative");
         }
@@ -125,6 +137,13 @@ public class FederationConfig {
         if (!enabled) {
             throw new ConflictException(NOT_ENABLED);
         }
+    }
+
+    /**
+     * @return the directory of peer credentials, or empty when peers are searched anonymously
+     */
+    public Optional<Path> getPeerCredentialsDir() {
+        return peerCredentialsDir.filter(dir -> !dir.isBlank()).map(Path::of);
     }
 
     public boolean isInsecureHttpEnabled() {
