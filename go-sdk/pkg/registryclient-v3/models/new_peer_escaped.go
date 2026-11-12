@@ -11,7 +11,7 @@ import (
 type NewPeerEscaped struct {
 	// Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
 	additionalData map[string]any
-	// Name of the key in the registry's peer credentials directory that holds the credential for this peer. A reference only: the credential value is never stored or returned.
+	// Name of the key in the registry's peer credentials directory (`apicurio.federation.peer.credentials.dir`) that holds the bearer token for this peer. A reference only: the credential value is never stored or returned. Used by federated search only when that directory is configured; the search stays public-only either way.
 	credentialSecretRef *string
 	// Description of the peer registry.
 	description *string
@@ -44,7 +44,7 @@ func (m *NewPeerEscaped) GetAdditionalData() map[string]any {
 	return m.additionalData
 }
 
-// GetCredentialSecretRef gets the credentialSecretRef property value. Name of the key in the registry's peer credentials directory that holds the credential for this peer. A reference only: the credential value is never stored or returned.
+// GetCredentialSecretRef gets the credentialSecretRef property value. Name of the key in the registry's peer credentials directory (`apicurio.federation.peer.credentials.dir`) that holds the bearer token for this peer. A reference only: the credential value is never stored or returned. Used by federated search only when that directory is configured; the search stays public-only either way.
 // returns a *string when successful
 func (m *NewPeerEscaped) GetCredentialSecretRef() *string {
 	return m.credentialSecretRef
@@ -199,7 +199,7 @@ func (m *NewPeerEscaped) SetAdditionalData(value map[string]any) {
 	m.additionalData = value
 }
 
-// SetCredentialSecretRef sets the credentialSecretRef property value. Name of the key in the registry's peer credentials directory that holds the credential for this peer. A reference only: the credential value is never stored or returned.
+// SetCredentialSecretRef sets the credentialSecretRef property value. Name of the key in the registry's peer credentials directory (`apicurio.federation.peer.credentials.dir`) that holds the bearer token for this peer. A reference only: the credential value is never stored or returned. Used by federated search only when that directory is configured; the search stays public-only either way.
 func (m *NewPeerEscaped) SetCredentialSecretRef(value *string) {
 	m.credentialSecretRef = value
 }
