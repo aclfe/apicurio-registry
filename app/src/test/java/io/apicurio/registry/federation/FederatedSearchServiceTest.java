@@ -409,7 +409,7 @@ class FederatedSearchServiceTest {
     void everyFailureHasItsOwnOutcome() {
         registered(peer("unreachable", true), peer("refused", true), peer("slow", true), peer("broken", true),
                 peer("denied", true), peer("garbled", true), peer("busy", true), peer("legacy", true),
-                peer("bug", true));
+                peer("bug", true), peer("keyless", true));
         peers.fails("unreachable", new PeerSearchException.Unreachable("x", null));
         peers.fails("refused", new PeerSearchException.AddressRefused("x"));
         peers.fails("slow", new PeerSearchException.Timeout("x"));
@@ -417,6 +417,7 @@ class FederatedSearchServiceTest {
         peers.fails("denied", new PeerSearchException.Unauthorized("x"));
         peers.fails("garbled", new PeerSearchException.InvalidResponse("x", null));
         peers.fails("busy", new PeerSearchException.CapacityExceeded("x"));
+        peers.fails("keyless", new PeerSearchException.CredentialUnavailable("x"));
         peers.fails("legacy", new PeerSearchException.Unsupported("x"));
         peers.behaviours.put("bug", query -> CompletableFuture.failedFuture(new IllegalStateException("x")));
 
@@ -429,6 +430,7 @@ class FederatedSearchServiceTest {
         assertFailed(results, "denied", FederatedSearchFailureReason.unauthorized);
         assertFailed(results, "garbled", FederatedSearchFailureReason.invalid_response);
         assertFailed(results, "busy", FederatedSearchFailureReason.capacity_exceeded);
+        assertFailed(results, "keyless", FederatedSearchFailureReason.credential_unavailable);
         assertFailed(results, "bug", FederatedSearchFailureReason.unreachable);
         FederatedSearchSource legacy = source(results, "legacy");
         assertEquals(FederatedSearchOutcome.unsupported, legacy.getOutcome());
@@ -603,6 +605,7 @@ class FederatedSearchServiceTest {
                 new PeerSearchException.InvalidResponse("garbage", null),
                 new PeerSearchException.AddressRefused("blocked"),
                 new PeerSearchException.CapacityExceeded("busy"),
+                new PeerSearchException.CredentialUnavailable("no key"),
                 new PeerSearchException.Cancelled());
         for (PeerSearchException failure : notThePeersFault) {
             String id = failure.getClass().getSimpleName().toLowerCase(Locale.ROOT);

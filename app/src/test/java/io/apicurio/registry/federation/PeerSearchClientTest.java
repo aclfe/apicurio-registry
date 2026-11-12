@@ -7,13 +7,17 @@ import io.vertx.core.net.SelfSignedCertificate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -379,6 +383,63 @@ class PeerSearchClientTest {
         started(client);
         client.resolver = host -> new InetAddress[0];
         assertInstanceOf(PeerSearchException.Unreachable.class, failed(client.search(peer("http://peer.test:9"), QUERY)));
+    }
+
+    private static PeerDto peerWithCredential(String url, String credentialSecretRef) {
+        return PeerDto.builder().peerId("test-peer").url(url).enabled(true).credentialSecretRef(credentialSecretRef)
+                .build();
+    }
+
+    @Test
+    void sendsThePeersCredentialAsABearerTokenAndStillAsksForPublicAgentsOnly(@TempDir Path credentials)
+            throws Exception {
+        Files.writeString(credentials.resolve("eu-west"), "peer-token\n");
+        config.peerCredentialsDir = Optional.of(credentials.toString());
+        try (StubPeer stub = StubPeer.start(vertx, (request, response) -> StubPeer.publicAgents(response, 1, "a"))) {
+            PeerSearchResponse result = succeeded(started(client).search(peerWithCredential(stub.url(), "eu-west"),
+                    QUERY));
+
+            assertEquals(1, result.agents().size());
+            StubPeer.Seen seen = stub.requests().get(0);
+            assertEquals("Bearer peer-token", seen.header("Authorization"));
+            assertTrue(seen.query().contains("publicOnly=true"), seen.query());
+            assertEquals("1", seen.header("X-Federation-Hop"));
+        }
+    }
+
+    @Test
+    void aCredentialThatCannotBeReadFailsTheCallWithoutCallingThePeer(@TempDir Path credentials) throws Exception {
+        config.peerCredentialsDir = Optional.of(credentials.toString());
+        try (StubPeer stub = StubPeer.start(vertx, (request, response) -> StubPeer.publicAgents(response, 0))) {
+            PeerSearchException failure = failed(started(client).search(peerWithCredential(stub.url(), "missing"),
+                    QUERY));
+
+            assertInstanceOf(PeerSearchException.CredentialUnavailable.class, failure);
+            assertEquals("The peer's credential was not found in the credentials directory.", failure.getMessage());
+            assertTrue(stub.requests().isEmpty(), "The peer must not be searched anonymously instead.");
+        }
+    }
+
+    @Test
+    void withoutACredentialsDirectoryAReferenceIsNotUsed(@TempDir Path credentials) throws Exception {
+        Files.writeString(credentials.resolve("eu-west"), "peer-token");
+        try (StubPeer stub = StubPeer.start(vertx, (request, response) -> StubPeer.publicAgents(response, 0))) {
+            succeeded(started(client).search(peerWithCredential(stub.url(), "eu-west"), QUERY));
+
+            assertNull(stub.requests().get(0).header("Authorization"));
+        }
+    }
+
+    @Test
+    void aPeerWithoutAReferenceIsCalledAnonymouslyEvenWithCredentialsEnabled(@TempDir Path credentials)
+            throws Exception {
+        Files.writeString(credentials.resolve("eu-west"), "peer-token");
+        config.peerCredentialsDir = Optional.of(credentials.toString());
+        try (StubPeer stub = StubPeer.start(vertx, (request, response) -> StubPeer.publicAgents(response, 0))) {
+            succeeded(search(stub.url()));
+
+            assertNull(stub.requests().get(0).header("Authorization"));
+        }
     }
 
     @Test
