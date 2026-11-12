@@ -540,6 +540,11 @@ The following {registry} configuration options are available for each component 
 |`false`
 |`3.4.0`
 |Enable federation with peer registries, including the peer management API _(experimental)_
+|`apicurio.federation.peer.credentials.dir`
+|`optional<string>`
+|
+|`3.4.0`
+|Directory of peer credentials. When set, a peer with a credentialSecretRef is searched with the content of the file of that name in this directory, sent as a bearer token, and the search stays public-only. If that file cannot be read, the peer is reported as credential_unavailable and is not searched anonymously instead. When not set, every peer is searched anonymously and credential references are not used. On Kubernetes, mount one Secret here as a whole volume, without subPath, so that added and rotated keys are picked up without a restart
 |`apicurio.federation.peer.insecure-http.enabled`
 |`boolean`
 |`false`
