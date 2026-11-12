@@ -10,6 +10,13 @@ describe("federatedSource", () => {
             + "progress, or more registries are enabled than one search queries.");
     });
 
+    it("explains a credential that could not be read", () => {
+        const source = { source: "eu-west", outcome: "failed", reason: "credential_unavailable", count: 0, truncated: false } as any;
+
+        expect(sourceLabel(source)).toBe("eu-west: credential unavailable");
+        expect(describeSource(source)).toBe("The credential configured for it could not be read, so it was not called.");
+    });
+
     it("explains a failure without a reason, which only administrators are given", () => {
         const source = { source: "peer-1", outcome: "failed", count: 0, truncated: false } as any;
 

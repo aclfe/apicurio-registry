@@ -12,7 +12,8 @@ const REASONS: Record<string, string> = {
     peer_error: "The registry answered with a server error or a redirect.",
     invalid_response: "The registry's answer was not a valid agent search result.",
     circuit_open: "The registry has been failing repeatedly and was not called this time.",
-    capacity_exceeded: "This registry did not call it: too many calls or searches were in progress, or more registries are enabled than one search queries."
+    capacity_exceeded: "This registry did not call it: too many calls or searches were in progress, or more registries are enabled than one search queries.",
+    credential_unavailable: "The credential configured for it could not be read, so it was not called."
 };
 
 export const SOURCE_COLORS: Record<string, "green" | "orange" | "grey" | "red"> = {

@@ -118,10 +118,10 @@ describe("PeerModal when editing", () => {
         enabled: false
     };
 
-    it("says that searches do not use the credential reference yet", () => {
+    it("says when searches use the credential reference, and that they stay public-only", () => {
         render(modal(true, peer));
 
-        expect(screen.getByText(/Federated search does not use it yet: remote registries are searched\s+anonymously, for their public agents only\./))
+        expect(screen.getByText(/It is used only when the server has a peer credentials directory set:\s+the key's content is then sent to the remote registry as a bearer token\.\s+Searches still return its public agents only\./))
             .toBeInTheDocument();
     });
 
