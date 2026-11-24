@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,6 +68,30 @@ class PeerCredentialsTest {
         Files.writeString(dir.resolve("eu-west"), TOKEN + "\n");
 
         assertEquals(Optional.of(TOKEN), token(dir, "eu-west"));
+    }
+
+    @Test
+    void aRelativeCredentialsDirectoryIsResolvedAgainstTheWorkingDirectory() throws IOException {
+        Path dir = credentialsDir();
+        Files.writeString(dir.resolve("eu-west"), TOKEN);
+        Path relative = Path.of("").toAbsolutePath().relativize(dir);
+
+        assertEquals(Optional.of(TOKEN), token(relative, "eu-west"));
+        assertEquals("The peer's credential reference does not name a key in the credentials directory.",
+                unavailable(relative, "../credentials/eu-west"));
+    }
+
+    @Test
+    void theWorkingDirectoryItselfCanBeTheCredentialsDirectory() throws IOException {
+        String reference = "peer-credentials-test-" + UUID.randomUUID();
+        Path key = Path.of(reference).toAbsolutePath();
+        Files.writeString(key, TOKEN);
+        try {
+            assertEquals(Optional.of(TOKEN), token(Path.of("."), reference));
+            assertEquals(Optional.of(TOKEN), token(Path.of(""), reference));
+        } finally {
+            Files.deleteIfExists(key);
+        }
     }
 
     @Test

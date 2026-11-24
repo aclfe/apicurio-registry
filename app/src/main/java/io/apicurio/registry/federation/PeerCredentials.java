@@ -48,11 +48,13 @@ final class PeerCredentials {
         if (directory.isEmpty() || reference == null) {
             return Optional.empty();
         }
-        Path dir = directory.get();
+        // Absolute first: a relative directory such as "." normalizes to an empty path, which no
+        // key's parent would equal.
+        Path dir = directory.get().toAbsolutePath().normalize();
         Path file = dir.resolve(reference).normalize();
         // The reference was validated when the peer was written; checked again, since nothing else
         // stops a reference from leaving the directory.
-        if (reference.isEmpty() || !dir.normalize().equals(file.getParent())
+        if (reference.isEmpty() || !dir.equals(file.getParent())
                 || !reference.equals(file.getFileName().toString())) {
             throw unavailable("The peer's credential reference does not name a key in the credentials directory.");
         }
