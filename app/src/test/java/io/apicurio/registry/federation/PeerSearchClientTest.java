@@ -408,6 +408,23 @@ class PeerSearchClientTest {
     }
 
     @Test
+    void aRejectedCredentialFailsTheCallWithoutAnAnonymousRetry(@TempDir Path credentials) throws Exception {
+        Files.writeString(credentials.resolve("eu-west"), "peer-token\n");
+        config.peerCredentialsDir = Optional.of(credentials.toString());
+        for (int status : new int[] { 401, 403 }) {
+            try (StubPeer stub = StubPeer.start(vertx, (request, response) -> response.setStatusCode(status).end())) {
+                PeerSearchException failure = failed(started(client).search(peerWithCredential(stub.url(), "eu-west"),
+                        QUERY));
+
+                assertInstanceOf(PeerSearchException.Unauthorized.class, failure, "status " + status);
+                assertEquals(1, stub.requests().size(), "status " + status);
+                assertEquals("Bearer peer-token", stub.requests().get(0).header("Authorization"),
+                        "status " + status);
+            }
+        }
+    }
+
+    @Test
     void aCredentialThatCannotBeReadFailsTheCallWithoutCallingThePeer(@TempDir Path credentials) throws Exception {
         config.peerCredentialsDir = Optional.of(credentials.toString());
         try (StubPeer stub = StubPeer.start(vertx, (request, response) -> StubPeer.publicAgents(response, 0))) {

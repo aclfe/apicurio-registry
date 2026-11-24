@@ -33,6 +33,7 @@ import static org.apache.http.params.CoreConnectionPNames.CONNECTION_TIMEOUT;
 import static org.apache.http.params.CoreConnectionPNames.SO_TIMEOUT;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -165,6 +166,8 @@ public class FederatedSearchAuthMultiInstanceIT {
                 .body("sources.outcome", contains("ok", "ok", "failed", "ok", "failed"))
                 .body("sources[2].reason", equalTo("unauthorized"))
                 .body("sources[4].reason", equalTo("credential_unavailable"))
+                // A failed peer adds nothing, and is not searched anonymously in its place.
+                .body("agents.findAll { it.source == 'b-rejected' || it.source == 'd-missing' }", empty())
                 .body("agents.findAll { it.source == 'a-anonymous' }.artifactId", contains("remote-public-agent"))
                 .body("agents.findAll { it.source == 'c-credentialed' }.artifactId", contains("remote-public-agent"))
                 // This registry's own results follow the caller's visibility: the administrator
@@ -182,6 +185,7 @@ public class FederatedSearchAuthMultiInstanceIT {
                 .body("sources.outcome", contains("ok", "ok", "failed", "ok", "failed"))
                 .body("sources[2].reason", nullValue())
                 .body("sources[4].reason", nullValue())
+                .body("agents.findAll { it.source == 'peer-2' || it.source == 'peer-4' }", empty())
                 .body("agents.findAll { it.source == 'peer-1' }.artifactId", contains("remote-public-agent"))
                 .body("agents.findAll { it.source == 'peer-3' }.artifactId", contains("remote-public-agent"))
                 .body("agents.findAll { it.source == 'local' }.artifactId", contains("local-public-agent"));
@@ -192,7 +196,8 @@ public class FederatedSearchAuthMultiInstanceIT {
         writeCredential("remote-admin", "a-token-the-remote-registry-does-not-accept");
         searchAs("admin-client").body("sources[3].source", equalTo("c-credentialed"))
                 .body("sources[3].outcome", equalTo("failed"))
-                .body("sources[3].reason", equalTo("unauthorized"));
+                .body("sources[3].reason", equalTo("unauthorized"))
+                .body("agents.findAll { it.source == 'c-credentialed' }", empty());
 
         writeCredential("remote-admin", token("admin-client"));
         searchAs("admin-client").body("sources[3].outcome", equalTo("ok"))
