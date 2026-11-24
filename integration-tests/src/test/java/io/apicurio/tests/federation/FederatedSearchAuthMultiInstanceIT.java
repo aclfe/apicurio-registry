@@ -1,8 +1,12 @@
 package io.apicurio.tests.federation;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.config.HttpClientConfig;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -25,6 +29,8 @@ import static io.apicurio.deployment.Constants.FEDERATION;
 import static io.apicurio.tests.kafkasql.startup.infra.Configs.REGISTRY_V3_IMAGE;
 import static io.apicurio.tests.kafkasql.startup.infra.Configs.REGISTRY_V3_IMAGE_DEFAULT;
 import static io.restassured.RestAssured.given;
+import static org.apache.http.params.CoreConnectionPNames.CONNECTION_TIMEOUT;
+import static org.apache.http.params.CoreConnectionPNames.SO_TIMEOUT;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -66,6 +72,17 @@ public class FederatedSearchAuthMultiInstanceIT {
                 "defaultOutputModes": ["text"]
             }
             """;
+
+    /**
+     * Every request of this test, the set-up included, has bounded connect and read timeouts, so a
+     * container that stops answering fails the test instead of holding a socket read open. Local to
+     * this class: the global RestAssured settings are left alone.
+     */
+    private static final RequestSpecification BOUNDED = new RequestSpecBuilder()
+            .setConfig(RestAssuredConfig.config().httpClient(HttpClientConfig.httpClientConfig()
+                    .setParam(CONNECTION_TIMEOUT, 10_000)
+                    .setParam(SO_TIMEOUT, 30_000)))
+            .build();
 
     private static Network network;
     private static KeycloakContainer keycloak;
@@ -131,14 +148,14 @@ public class FederatedSearchAuthMultiInstanceIT {
 
     @Test
     void aCallerWithoutCredentialsCannotSearch() {
-        given().queryParam("skill", SKILL).get(searchUrl()).then().statusCode(401);
+        given(BOUNDED).queryParam("skill", SKILL).get(searchUrl()).then().statusCode(401);
     }
 
     @Test
     void aCredentialedPeerStillReturnsOnlyItsPublicAgents() {
         writeCredential("remote-admin", token("admin-client"));
         // The remote administrator the credential belongs to can read all three remote agents.
-        given().auth().oauth2(token("admin-client")).queryParam("skill", SKILL)
+        given(BOUNDED).auth().oauth2(token("admin-client")).queryParam("skill", SKILL)
                 .get(url(remote) + "/.well-known/agents").then().statusCode(200)
                 .body("agents.artifactId", containsInAnyOrder("remote-public-agent", "remote-private-agent",
                         "remote-entitled-agent"));
@@ -183,7 +200,7 @@ public class FederatedSearchAuthMultiInstanceIT {
     }
 
     private static ValidatableResponse searchAs(String clientId) {
-        return given().auth().oauth2(token(clientId)).queryParam("skill", SKILL).get(searchUrl()).then()
+        return given(BOUNDED).auth().oauth2(token(clientId)).queryParam("skill", SKILL).get(searchUrl()).then()
                 .statusCode(200);
     }
 
@@ -193,7 +210,7 @@ public class FederatedSearchAuthMultiInstanceIT {
 
     /** A token of the client's service account; the realm gives every one a secret of test1. */
     private static String token(String clientId) {
-        return given().formParam("grant_type", "client_credentials").formParam("client_id", clientId)
+        return given(BOUNDED).formParam("grant_type", "client_credentials").formParam("client_id", clientId)
                 .formParam("client_secret", "test1")
                 .post(keycloak.getAuthServerUrl() + "/realms/registry/protocol/openid-connect/token")
                 .then().statusCode(200).extract().path("access_token");
@@ -204,7 +221,7 @@ public class FederatedSearchAuthMultiInstanceIT {
     }
 
     private static void registerPeer(String adminToken, Map<String, String> peer) {
-        given().auth().oauth2(adminToken).contentType(ContentType.JSON).body(peer)
+        given(BOUNDED).auth().oauth2(adminToken).contentType(ContentType.JSON).body(peer)
                 .post(url(local) + "/apis/registry/v3/admin/peers").then().statusCode(204);
     }
 
@@ -243,7 +260,7 @@ public class FederatedSearchAuthMultiInstanceIT {
         body.put("firstVersion", Map.of("content",
                 Map.of("content", CARD.formatted(artifactId, SKILL), "contentType", "application/json")));
 
-        given().auth().oauth2(adminToken).contentType(ContentType.JSON).body(body)
+        given(BOUNDED).auth().oauth2(adminToken).contentType(ContentType.JSON).body(body)
                 .post(url(registry) + "/apis/registry/v3/groups/federation-auth-it/artifacts")
                 .then().statusCode(200);
     }
