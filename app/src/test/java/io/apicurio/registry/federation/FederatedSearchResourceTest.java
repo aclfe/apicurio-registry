@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -334,8 +335,8 @@ public class FederatedSearchResourceTest extends AbstractResourceTestBase {
     }
 
     @Test
-    void aPeerWithACredentialIsSearchedWithItAndAMissingOneFailsOnlyThatPeer() throws Exception {
-        Path credentials = Files.createTempDirectory("peer-credentials");
+    void aPeerWithACredentialIsSearchedWithItAndAMissingOneFailsOnlyThatPeer(@TempDir Path credentials)
+            throws Exception {
         Files.writeString(credentials.resolve("with-key"), "peer-token\n");
         String skill = "credentials-" + UUID.randomUUID();
         card("local-card", skill, "public");
