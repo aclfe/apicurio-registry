@@ -761,6 +761,75 @@ The tab shows a card for each agent. Each card shows the agent name, version, an
 
 * The web console opens the page of the new artifact or the new version, and the agent card appears on the *Agents* tab.
 
+[id="managing-peer-registries-using-console_{context}"]
+== Managing peer registries using the {registry} web console
+
+:_mod-docs-content-type: PROCEDURE
+
+[role="_abstract"]
+As an administrator, you can use the *Remote registries* tab of the {registry} web console to add, edit, and remove the peer registries that federated agent search queries. For the peer fields and the checks that {registry} applies to a peer URL, see xref:getting-started/assembly-a2a-features.adoc#a2a-peer-registries_{context}[Peer registries for federated agent search].
+
+IMPORTANT: This feature is experimental and subject to backwards-incompatible change or removal.
+
+.Prerequisites
+
+* {registry} runs with `apicurio.features.experimental.enabled=true` and `apicurio.federation.enabled=true`. When federation is not enabled, the tab shows *Federation is not enabled*.
+* You are an administrator. The web console shows the *Remote registries* tab only to administrators.
+* To add, edit, or remove peers, the web console is not in read-only mode.
+
+.Procedure
+
+. In the {registry} web console, click the *Remote registries* tab.
++
+The tab lists the peers with their *Registry* name, *URL*, *Federated search* state, either *Enabled* or *Disabled*, and *Credential reference*.
+
+. To add a peer, click *Add remote registry*, enter the *Peer ID* and the *URL*, and click *Add*. You can also enter a *Name*, a *Description*, and a *Credential reference*. You cannot change the peer ID later.
++
+The web console checks the fields before it sends them. When {registry} refuses the peer, the dialog shows the reason.
+
+. To change a peer, select *Edit* from the Action menu (three vertical dots) of its row, change the fields, and click *Save*. To stop searching a peer without removing it, turn off *Enabled*.
+
+. To remove a peer, select *Remove* from the Action menu of its row, and click *Remove* to confirm.
+
+NOTE: {registry} stores the *Credential reference* but does not use it. Federated agent search calls every peer anonymously and returns only its public agents.
+
+.Verification
+
+* The peer appears on the *Remote registries* tab with the *Federated search* state that you set.
+
+[id="searching-remote-registries-using-console_{context}"]
+== Searching remote registries from the Agents tab
+
+:_mod-docs-content-type: PROCEDURE
+
+[role="_abstract"]
+On the *Agents* tab of the {registry} web console, you can include the agents of the enabled peer registries in a search. For how {registry} searches the peers, see xref:getting-started/assembly-a2a-features.adoc#a2a-federated-agent-search_{context}[Federated agent search].
+
+IMPORTANT: This feature is experimental and subject to backwards-incompatible change or removal.
+
+.Prerequisites
+
+* The *Agents* tab is available, as described in xref:browsing-agent-cards-using-console_{context}[Browsing and registering agent cards using the {registry} web console].
+* Federation is enabled, and at least one peer registry is enabled.
+
+.Procedure
+
+. In the {registry} web console, click the *Agents* tab.
+
+. Turn on *Include remote registries*.
++
+The tab searches this registry and every enabled peer with the same name, skill, and capability filters. Each agent card shows a label with the registry that it came from: *This registry*, or the peer. Each registry returns at most one page of agents, and the results are not paged.
+
+. Check the *Registries searched* labels. Each label shows one registry and its outcome: the number of agents that it returned, *out of time*, *not supported*, or the reason that the search of the registry failed. Hover over a label for a description.
++
+Only an administrator sees the peer IDs and the failure reasons. Other users see the peers as `peer-1`, `peer-2`, and so on, without a reason.
+
+. To open the `AGENT_CARD` artifact of an agent from this registry, click its card. The card of an agent from a peer does not open, because the artifact is stored in the peer.
+
+.Verification
+
+* The agent cards of the peers appear with the name of their registry. If federation is not enabled, the tab shows *Only this registry was searched* and turns off *Include remote registries*.
+
 [id="changing-artifact-owner-using-console_{context}"]
 == Changing an artifact owner using the {registry} web console
 :_mod-docs-content-type: PROCEDURE

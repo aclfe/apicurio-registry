@@ -367,6 +367,8 @@ With federated agent search, one request searches the Agent Cards of this regist
 
 A peer registry is another registry that an administrator registers with this registry, for example through the `/apis/registry/v3/admin/peers` REST API. {registry} searches only the peers that are enabled.
 
+In the web console, you can run a federated search from the *Agents* tab, as described in xref:getting-started/assembly-managing-registry-artifacts-ui.adoc#searching-remote-registries-using-console_{context}[Searching remote registries from the Agents tab].
+
 To use federated agent search, enable A2A protocol support and set `apicurio.federation.enabled=true`. The `apicurio.agents.enabled` property does not enable federation.
 
 NOTE: `apicurio.federation.enabled` is an experimental property. You must also set `apicurio.features.experimental.enabled=true` to use it.
@@ -578,6 +580,8 @@ When federation is enabled, {registry} checks these values at startup and does n
 As an administrator, you manage the peer registries through the `/apis/registry/v3/admin/peers` REST API. A registry that uses GitOps or KubernetesOps storage loads its peers from the `peers` list of the registry configuration instead.
 
 The peer management API requires `apicurio.federation.enabled=true`, and every operation returns HTTP 409 without it. xref:a2a-federated-agent-search_{context}[Federated agent search] describes how to enable federation and how {registry} searches the peers.
+
+In the web console, an administrator can manage the peers on the *Remote registries* tab, as described in xref:getting-started/assembly-managing-registry-artifacts-ui.adoc#managing-peer-registries-using-console_{context}[Managing peer registries using the {registry} web console].
 
 .Peer fields
 [cols="1,1,4",options="header"]
